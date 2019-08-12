@@ -67,3 +67,24 @@ class ImageNetVal(Dataset):
         image = Image.open(self.image_path_list[index])
         label = self.class_ids[index]
         return image, label
+
+    def __len__(self):
+        return len(self.image_path_list)
+
+
+class ImageNetTest(Dataset):
+    def __init__(self, data_root):
+        """
+
+        :param data_root:
+        """
+        self.data_dir = osp.join(data_root, 'test')
+        self.image_path_list = osp.join(self.data_dir, os.listdir(self.data_dir))
+        self.image_path_list.sort()
+
+    def __getitem__(self, index):
+        image = Image.open(self.image_path_list[index])
+        return image
+
+    def __len__(self):
+        return len(self.image_path_list)
