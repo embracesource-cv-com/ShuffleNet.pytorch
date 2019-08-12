@@ -14,6 +14,10 @@ from PIL import Image
 
 
 class ImageNetTrain(Dataset):
+    """
+    训练集
+    """
+
     def __init__(self, data_root, map_cls_file):
         """
 
@@ -43,3 +47,23 @@ class ImageNetTrain(Dataset):
 
     def __len__(self):
         return len(self.image_path_list)
+
+
+class ImageNetVal(Dataset):
+    def __init__(self, data_root, cls_file):
+        """
+
+        :param data_root:
+        :param cls_file:
+        """
+        self.data_dir = osp.join(data_root, 'val')
+        self.image_path_list = osp.join(self.data_dir, os.listdir(self.data_dir))
+        self.image_path_list.sort()
+        with codecs.open(cls_file, encoding='utf-8') as f:
+            lines = f.readlines()
+        self.class_ids = [int(class_id) - 1 for class_id in lines]  # 从0开始
+
+    def __getitem__(self, index):
+        image = Image.open(self.image_path_list[index])
+        label = self.class_ids[index]
+        return image, label
