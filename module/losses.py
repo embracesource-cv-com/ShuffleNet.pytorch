@@ -11,6 +11,10 @@ from torch.nn import functional as F
 
 
 class SoftCrossEntropyLoss(nn.NLLLoss):
+    """
+    标签平滑损失
+    """
+
     def __init__(self, label_smoothing=0, num_classes=1000, **kwargs):
         assert 0 <= label_smoothing <= 1
         super(SoftCrossEntropyLoss, self).__init__(**kwargs)
@@ -19,9 +23,9 @@ class SoftCrossEntropyLoss(nn.NLLLoss):
         self.criterion = nn.KLDivLoss(reduction='batchmean')
         print('using soft celoss!!!, label_smoothing = ', label_smoothing)
 
-    def forward(self, input, target):
-        one_hot = torch.zeros_like(input)
+    def forward(self, x, target):
+        one_hot = torch.zeros_like(x)
         one_hot.fill_(self.other)
         one_hot.scatter_(1, target.unsqueeze(1).long(), self.confidence)
-        input = F.log_softmax(input, 1)
-        return self.criterion(input, one_hot)
+        x = F.log_softmax(x, 1)
+        return self.criterion(x, one_hot)
