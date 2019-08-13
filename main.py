@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-   File Name：     train.py.py
-   Description :   训练
+   File Name：     main.py.py
+   Description :   训练、预测、评估入口
    Author :       mick.yi
    Date：          2019/8/12
 """
@@ -10,7 +10,6 @@ import os
 import numpy as np
 from torch import nn, optim
 import torch
-from config import cfg
 from tqdm import tqdm
 from PIL import ImageFile
 import timeit
@@ -20,6 +19,7 @@ import codecs
 from utils import model_utils
 from module.losses import SoftCrossEntropyLoss
 import warnings
+from config import Config
 
 warnings.filterwarnings('ignore')
 
@@ -44,7 +44,7 @@ def train(args):
     val_loader = cfg.val_loader(batch_size)
     net = cfg.model()
     # criterion = nn.CrossEntropyLoss().to(device)
-    criterion = SoftCrossEntropyLoss(label_smoothing=0.1, num_classes=cfg.NUM_CLASSES).to(device)
+    criterion = SoftCrossEntropyLoss(label_smoothing=0.1, num_classes=cfg.num_classes).to(device)
     optimizer = optim.SGD(model_utils.split_weights(net), lr=args.lr, momentum=0.9, weight_decay=1e-4)
     # scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[10, 20, 40], gamma=0.1)
     # scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
@@ -205,15 +205,17 @@ def adjust_learning_rate(optimizer, epoch, args):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='遥感分类竞赛')
+    parser = argparse.ArgumentParser(description='ShuffleNet分类网络')
     parser.add_argument('--mode', type=str, default='train', choices=['train', 'test', 'eval'],
                         help='mode: train or test')
+    parser.add_argument('--model', type=str, default='shufflenet_v2', help='network name')
+    parser.add_argument('--data-set', type=str, default='imagenet', help='data set for training and testing')
     parser.add_argument('--num-gpu', type=int, default=1, help='number of gpus used for training')
-    parser.add_argument('--epochs', type=int, default=cfg.EPOCHS, help='number of training epochs')
+    parser.add_argument('--epochs', type=int, default=50, help='number of training epochs')
     parser.add_argument('--lr', type=float, default=5e-2, help='learning rate')
-    parser.add_argument('--batch-size', type=int, default=cfg.BATCH_SIZE, help='batch size')
+    parser.add_argument('--batch-size', type=int, default=128, help='batch size')
     parser.add_argument('--start-epoch', type=int, default=0, help='start epoch')
-    parser.add_argument('--weight-path', type=str, default=cfg.save_path, help='weight path in the test stage')
+    parser.add_argument('--weight-path', type=str, default=None, help='weight path in the test stage')
     parser.add_argument('--mixup', action='store_true', help='whether to use mixup')
     parser.add_argument('--alpha', default=1., type=float, metavar='mixup alpha',
                         help='alpha value for mixup B(alpha, alpha) distribution')
@@ -231,6 +233,8 @@ if __name__ == '__main__':
     parser.add_argument('--loss-scale', type=float, default=None)
     arguments = parser.parse_args()
     state = {k: v for k, v in arguments._get_kwargs()}
+
+    cfg = Config(arguments.data_set, arguments.model, arguments.batch_size)
 
     if 'train' == arguments.mode:
         train(arguments)
