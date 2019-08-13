@@ -40,8 +40,8 @@ def train(args):
         torch.distributed.init_process_group(backend='nccl', world_size=1, rank=0, init_method='env://')
     # variables
     device = cfg.device(num_gpus)
-    train_loader = cfg.train_loader(num_gpus, batch_size)
-    val_loader = cfg.val_loader(batch_size)
+    train_loader = cfg.train_loader(num_gpus)
+    val_loader = cfg.val_loader()
     net = cfg.model()
     # criterion = nn.CrossEntropyLoss().to(device)
     criterion = SoftCrossEntropyLoss(label_smoothing=0.1, num_classes=cfg.num_classes).to(device)
@@ -130,7 +130,7 @@ def inference(args):
     # variables
     device = cfg.device(num_gpus)
     net = cfg.model().to(device)
-    test_loader = cfg.test_loader(batch_size=batch_size)
+    test_loader = cfg.test_loader()
     # load weights
     checkpoint = torch.load(weight_path)
     net.load_state_dict(checkpoint)
@@ -171,7 +171,7 @@ def evaluate(args):
     # variables
     device = cfg.device(num_gpus)
     net = cfg.model().to(device)
-    val_loader = cfg.val_loader(batch_size)
+    val_loader = cfg.val_loader()
     # load weights
     checkpoint = torch.load(weight_path)
     net.load_state_dict(checkpoint)
@@ -233,8 +233,8 @@ if __name__ == '__main__':
     parser.add_argument('--loss-scale', type=float, default=None)
     arguments = parser.parse_args()
     state = {k: v for k, v in arguments._get_kwargs()}
-
-    cfg = Config(arguments.data_set, arguments.model, arguments.batch_size)
+    batch_size = arguments.batch_size * arguments.num_gpu
+    cfg = Config(arguments.data_set, arguments.model, batch_size)
 
     if 'train' == arguments.mode:
         train(arguments)

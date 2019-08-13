@@ -31,8 +31,8 @@ class Config(object):
         self.data_set = data_set
         self.model_name = model_name
         self.batch_size = batch_size
-        self.save_path = self.save_path.format(self.MODEL_NAME, self.DATA_SET)
-        self.log_dir = self.log_dir.format(self.MODEL_NAME)
+        self.save_path = self.save_path.format(self.model_name, self.data_set)
+        self.log_dir = self.log_dir.format(self.model_name)
         name, ext = os.path.splitext(self.save_path)
         self.snapshot_save_path = name + '.{:03d}' + ext  # eg: cifar10-vgg16.020.ckpt
 

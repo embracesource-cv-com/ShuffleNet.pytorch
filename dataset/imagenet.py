@@ -43,9 +43,10 @@ class ImageNetTrain(Dataset):
             self.name_map_id[class_name] = int(class_id) - 1
 
     def __getitem__(self, index):
-        image_path = self.image_path_list[index]  # eg: n03032252_40790.JPEG
-        image = Image.open(image_path)
-        label = self.wnid_map_class_id[image_path.split('_')[0]]
+        image_path = self.image_path_list[index]  # eg: /path/to/imagenet/n03032252_40790.JPEG
+        image = Image.open(image_path).convert("RGB")
+        wnid = osp.basename(image_path).split('_')[0]
+        label = self.wnid_map_class_id[wnid]
         if self.transform is not None:
             image = self.transform(image)
         if self.target_transform is not None:
@@ -74,7 +75,7 @@ class ImageNetVal(Dataset):
         self.class_ids = [int(class_id) - 1 for class_id in lines]  # 从0开始
 
     def __getitem__(self, index):
-        image = Image.open(self.image_path_list[index])
+        image = Image.open(self.image_path_list[index]).convert("RGB")
         label = self.class_ids[index]
         if self.transform is not None:
             image = self.transform(image)
@@ -98,7 +99,7 @@ class ImageNetTest(Dataset):
         self.transform = transform
 
     def __getitem__(self, index):
-        image = Image.open(self.image_path_list[index])
+        image = Image.open(self.image_path_list[index]).convert("RGB")
         if self.transform is not None:
             image = self.transform(image)
         return image
