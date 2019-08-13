@@ -8,9 +8,10 @@
 """
 from torch.utils.data.dataset import Dataset
 import os.path as osp
-import os
 import codecs
 from PIL import Image
+import numpy as np
+from utils import file_utils
 
 
 class ImageNetTrain(Dataset):
@@ -18,7 +19,7 @@ class ImageNetTrain(Dataset):
     训练集
     """
 
-    def __init__(self, data_root, map_cls_file):
+    def __init__(self, data_root, map_cls_file, transform=None, target_transform=None):
         """
 
         :param data_root: imagenet数据集根目录
@@ -26,7 +27,9 @@ class ImageNetTrain(Dataset):
         """
         self.data_root = data_root
         self.data_dir = osp.join(data_root, 'train')
-        self.image_path_list = osp.join(self.data_dir, os.listdir(self.data_dir))
+        self.image_path_list = file_utils.get_sub_files(self.data_dir)
+        self.transform = transform
+        self.target_transform = target_transform
         with codecs.open(map_cls_file, encoding='utf-8', mode='r') as f:
             lines = f.readlines()
         self.wnid_map_class_id = dict()
@@ -40,9 +43,14 @@ class ImageNetTrain(Dataset):
             self.name_map_id[class_name] = int(class_id) - 1
 
     def __getitem__(self, index):
-        image_path = self.image_path_list[index]
+        image_path = self.image_path_list[index]  # eg: n03032252_40790.JPEG
         image = Image.open(image_path)
-        label = self.wnid_map_class_id(image_path.split('_')[0])
+        label = self.wnid_map_class_id[image_path.split('_')[0]]
+        if self.transform is not None:
+            image = self.transform(image)
+        if self.target_transform is not None:
+            label = self.target_transform(np.array(label))
+
         return image, label
 
     def __len__(self):
@@ -50,15 +58,17 @@ class ImageNetTrain(Dataset):
 
 
 class ImageNetVal(Dataset):
-    def __init__(self, data_root, cls_file):
+    def __init__(self, data_root, cls_file, transform=None, target_transform=None):
         """
 
         :param data_root:
         :param cls_file:
         """
         self.data_dir = osp.join(data_root, 'val')
-        self.image_path_list = osp.join(self.data_dir, os.listdir(self.data_dir))
+        self.image_path_list = file_utils.get_sub_files(self.data_dir)
         self.image_path_list.sort()
+        self.transform = transform
+        self.target_transform = target_transform
         with codecs.open(cls_file, encoding='utf-8') as f:
             lines = f.readlines()
         self.class_ids = [int(class_id) - 1 for class_id in lines]  # 从0开始
@@ -66,6 +76,10 @@ class ImageNetVal(Dataset):
     def __getitem__(self, index):
         image = Image.open(self.image_path_list[index])
         label = self.class_ids[index]
+        if self.transform is not None:
+            image = self.transform(image)
+        if self.target_transform is not None:
+            label = self.target_transform(np.array(label))
         return image, label
 
     def __len__(self):
@@ -73,17 +87,20 @@ class ImageNetVal(Dataset):
 
 
 class ImageNetTest(Dataset):
-    def __init__(self, data_root):
+    def __init__(self, data_root, transform=None):
         """
 
         :param data_root:
         """
         self.data_dir = osp.join(data_root, 'test')
-        self.image_path_list = osp.join(self.data_dir, os.listdir(self.data_dir))
+        self.image_path_list = file_utils.get_sub_files(self.data_dir)
         self.image_path_list.sort()
+        self.transform = transform
 
     def __getitem__(self, index):
         image = Image.open(self.image_path_list[index])
+        if self.transform is not None:
+            image = self.transform(image)
         return image
 
     def __len__(self):
